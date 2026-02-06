@@ -1,5 +1,7 @@
+import sys
 import time
 
+from PySide6.QtWidgets import QApplication
 from selenium.webdriver.common.by import By
 
 from consumable_purchase_order_handler import handle_consumable_purchase_order_page
@@ -52,6 +54,7 @@ def main():
 
     # 运行演示
     scraper = EdgeScraper(headless=False)
+    app = QApplication(sys.argv)
     demonstrate_ciomp_login_process(scraper)
 
     while scraper.wait_for_user_interaction(

@@ -1,8 +1,11 @@
 import os
 import shutil
+import sys
 import time
 
 import uuid
+
+from PySide6.QtWidgets import QApplication
 from path import Path
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC  # 用于定义等待条件
@@ -12,6 +15,7 @@ from download_directory_utils import create_download_dir, change_download_dir
 from edge_scraper import EdgeScraper
 from ciomp_scraper import demonstrate_ciomp_login_process
 from form_handler import handle_form_page
+from modify_report_name import modify_report_name
 
 
 def handle_loan_page(scraper, download_dir = None, timeout=5):
@@ -123,66 +127,11 @@ def handle_loan_page(scraper, download_dir = None, timeout=5):
 
         # 获取借款单号并重命名下载的PDF文件
         if loan_text:
-            old_pdf_path = download_dir / "FM_LOAN_RPT.pdf"
-            new_pdf_path = download_dir / f"借款单号{loan_text}.pdf"
-            
-            # 等待文件下载完成
-            max_wait_time = 30  # 最多等待30秒
-            wait_count = 0
-
-            while not old_pdf_path.exists() and wait_count < max_wait_time:
-                time.sleep(1)
-                wait_count += 1
-            
-            # 检查目标文件是否已存在，如果存在则添加序号
-            counter = 1
-            final_new_path = new_pdf_path
-            while final_new_path.exists():
-                name_part = new_pdf_path.stem
-                ext_part = new_pdf_path.suffix
-                final_new_path = download_dir / f"{name_part}({counter}){ext_part}"
-                counter += 1
-            
-            if old_pdf_path.exists():
-                old_pdf_path.rename(final_new_path)
-                if final_new_path != new_pdf_path:
-                    print(f"已将 FM_LOAN_RPT.pdf 重命名为 {final_new_path.name} (原名称 {new_pdf_path.name} 已存在，使用新名称)")
-                else:
-                    print(f"已将 FM_LOAN_RPT.pdf 重命名为 {final_new_path.name}")
-            else:
-                print(f"警告: 未找到 FM_LOAN_RPT.pdf 文件，可能下载失败或名称不同")
-
+            modify_report_name(download_dir, "FM_LOAN_RPT.pdf", f"借款单号{loan_text}.pdf")
 
         # 获取凭证号并重命名下载的PDF文件
         if voucher_text:
-            old_pdf_path = download_dir / "FM_VOUCHER_INFO.pdf"
-            new_pdf_path = download_dir / f"借款凭证号{voucher_text}.pdf"
-            
-            # 等待文件下载完成
-            max_wait_time = 30  # 最多等待30秒
-            wait_count = 0
-            while not old_pdf_path.exists() and wait_count < max_wait_time:
-                time.sleep(1)
-                wait_count += 1
-            
-
-            # 检查目标文件是否已存在，如果存在则添加序号
-            counter = 1
-            final_new_path = new_pdf_path
-            while final_new_path.exists():
-                name_part = new_pdf_path.stem
-                ext_part = new_pdf_path.suffix
-                final_new_path = download_dir / f"{name_part}({counter}){ext_part}"
-                counter += 1
-            
-            if old_pdf_path.exists():
-                old_pdf_path.rename(final_new_path)
-                if final_new_path != new_pdf_path:
-                    print(f"已将 FM_VOUCHER_INFO.pdf 重命名为 {final_new_path.name} (原名称 {new_pdf_path.name} 已存在，使用新名称)")
-                else:
-                    print(f"已将 FM_VOUCHER_INFO.pdf 重命名为 {final_new_path.name}")
-            else:
-                print(f"警告: 未找到 FM_VOUCHER_INFO.pdf 文件，可能下载失败或名称不同")
+            modify_report_name(download_dir, "FM_VOUCHER_INFO.pdf", f"借款凭证号{voucher_text}.pdf")
 
     except Exception as e:
         print(f"处理页面链接时出现异常: {e}")
@@ -197,6 +146,7 @@ def main():
 
     # 运行演示
     scraper = EdgeScraper(headless=False)
+    app = QApplication(sys.argv)
     demonstrate_ciomp_login_process(scraper)
     # 显示确认弹窗
     user_confirmed = scraper.wait_for_user_interaction(

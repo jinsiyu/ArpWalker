@@ -1,8 +1,10 @@
 import os
+import sys
 import time
 
 import uuid
 
+from PySide6.QtWidgets import QApplication
 from path import Path
 from selenium.webdriver.common.by import By
 
@@ -10,7 +12,8 @@ from download_directory_utils import create_download_dir, change_download_dir
 from edge_scraper import EdgeScraper
 from ciomp_scraper import demonstrate_ciomp_login_process
 from form_handler import handle_form_page
-from modify_appendix_name import modify_appendix_name
+from modify_report_name import modify_report_name
+from modify_url_appendix_name import modify_url_appendix_name
 
 
 def handle_consumable_stock_page(scraper, timeout=10):
@@ -154,7 +157,7 @@ def handle_consumable_stock_page(scraper, timeout=10):
         for i, img in enumerate(img_list):
             img_src = img.get_attribute('src')
             print(f"第{i + 1}个大图元素:{img_src}")
-            new_name = modify_appendix_name(img_src, f"MaterialImage_{i + 1}")
+            new_name = modify_url_appendix_name(img_src, f"耗材图片_{i + 1}")
 
             scraper.driver.get(new_name)
             time.sleep(1)
@@ -168,119 +171,11 @@ def handle_consumable_stock_page(scraper, timeout=10):
 
         # 获取验收单号并重命名下载的PDF文件
         if stock_number_text:
-            old_pdf_path = download_dir / "AM_MAT_ACPT.pdf"
-            new_pdf_path = download_dir / f"耗材验收单号{stock_number_text}.pdf"
-
-            # 等待文件下载完成
-            max_wait_time = 30  # 最多等待30秒
-            wait_count = 0
-            while not old_pdf_path.exists() and wait_count < max_wait_time:
-                time.sleep(1)
-                wait_count += 1
-
-            # 检查目标文件是否已存在，如果存在则添加序号
-            counter = 1
-            final_new_path = new_pdf_path
-            while final_new_path.exists():
-                name_part = new_pdf_path.stem
-                ext_part = new_pdf_path.suffix
-                final_new_path = download_dir / f"{name_part}({counter}){ext_part}"
-                counter += 1
-
-            if old_pdf_path.exists():
-                old_pdf_path.rename(final_new_path)
-                if final_new_path != new_pdf_path:
-                    print(
-                        f"已将 AM_MAT_ACPT.pdf 重命名为 {final_new_path.name} (原名称 {new_pdf_path.name} 已存在，使用新名称)")
-                else:
-                    print(f"已将 AM_MAT_ACPT.pdf 重命名为 {final_new_path.name}")
-            else:
-                print(f"警告: 未找到 AM_MAT_ACPT.pdf 文件，可能下载失败或名称不同")
+            modify_report_name(download_dir, "AM_MAT_ACPT.pdf", f"耗材验收单号{stock_number_text}.pdf")
 
         # 获取领用单号并重命名下载的PDF文件
         if out_number_text:
-            old_pdf_path = download_dir / "AM_MAT_STOCK_IN.pdf"
-            new_pdf_path = download_dir / f"耗材领用单号{out_number_text}.pdf"
-
-            # 等待文件下载完成
-            max_wait_time = 30  # 最多等待30秒
-            wait_count = 0
-            while not old_pdf_path.exists() and wait_count < max_wait_time:
-                time.sleep(1)
-                wait_count += 1
-
-            # 检查目标文件是否已存在，如果存在则添加序号
-            counter = 1
-            final_new_path = new_pdf_path
-            while final_new_path.exists():
-                name_part = new_pdf_path.stem
-                ext_part = new_pdf_path.suffix
-                final_new_path = download_dir / f"{name_part}({counter}){ext_part}"
-                counter += 1
-
-            if old_pdf_path.exists():
-                old_pdf_path.rename(final_new_path)
-                if final_new_path != new_pdf_path:
-                    print(
-                        f"已将 AM_MAT_STOCK_IN.pdf 重命名为 {final_new_path.name} (原名称 {new_pdf_path.name} 已存在，使用新名称)")
-                else:
-                    print(f"已将 AM_MAT_STOCK_IN.pdf 重命名为 {final_new_path.name}")
-            else:
-                print(f"警告: 未找到 AM_MAT_STOCK_IN.pdf 文件，可能下载失败或名称不同")
-
-        # 遍历下载目录中的所有文件，将image_数字.*或MaterialImage_数字.*格式的文件重命名为耗材_数字.*
-        material_image_counter = 1
-        for file_path in download_dir.files():
-            # 检查是否是MaterialImage开头的文件（通过修改URL下载的）
-            if file_path.basename().startswith("MaterialImage_"):
-                # 提取数字部分和扩展名
-                name_without_ext = file_path.stem  # 不含扩展名的文件名
-                extension = file_path.suffix  # 扩展名（包含.）
-                
-                # 从不含扩展名的文件名中提取数字部分
-                parts = name_without_ext.split("_")
-                if len(parts) >= 2:
-                    number_part = parts[1]  # 获取数字部分
-                    new_file_name = f"耗材图片_{number_part}{extension}"
-                    new_file_path = download_dir / new_file_name
-                    
-                    # 检查目标文件是否已存在，如果存在则添加序号
-                    counter = 1
-                    final_new_path = new_file_path
-                    while final_new_path.exists():
-                        name_part = new_file_path.stem
-                        ext_part = new_file_path.suffix
-                        final_new_path = download_dir / f"{name_part}({counter}){ext_part}"
-                        counter += 1
-                    
-                    file_path.rename(final_new_path)
-                    if final_new_path != new_file_path:
-                        print(f"已将 {file_path.basename()} 重命名为 {final_new_path.name} (原名称已存在)")
-                    else:
-                        print(f"已将 {file_path.basename()} 重命名为 {new_file_name}")
-            
-            # 检查是否是可能的原始图片文件（如微信图片等），但不以MaterialImage开头
-            # 这些可能是浏览器没有使用修改后的URL参数作为文件名的情况
-            elif (file_path.basename().startswith("微信图片") or 
-                  file_path.basename().startswith("%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87") or
-                  file_path.basename().startswith("image_")) and not any(c.isdigit() for c in file_path.stem if c != '_'):
-                # 为这类文件分配一个MaterialImage名称以便后续处理
-                temp_name = f"MaterialImage_{material_image_counter}{file_path.suffix}"
-                temp_path = download_dir / temp_name
-                
-                # 检查目标文件是否已存在
-                counter = 1
-                final_temp_path = temp_path
-                while final_temp_path.exists():
-                    name_part = temp_path.stem
-                    ext_part = temp_path.suffix
-                    final_temp_path = download_dir / f"{name_part}({counter}){ext_part}"
-                    counter += 1
-                
-                file_path.rename(final_temp_path)
-                material_image_counter += 1
-                
-                print(f"检测到原始图片文件 {file_path.basename()}，临时重命名为 {final_temp_path.name} 以便后续处理")
+            modify_report_name(download_dir, "AM_MAT_STOCK_IN.pdf", f"耗材领用单号{out_number_text}.pdf")
 
     except Exception as e:
         print(f"处理页面链接时出现异常: {e}")
@@ -295,6 +190,7 @@ def main():
 
     # 运行演示
     scraper = EdgeScraper(headless=False)
+    app = QApplication(sys.argv)
     demonstrate_ciomp_login_process(scraper)
     # 显示确认弹窗
     user_confirmed = scraper.wait_for_user_interaction(

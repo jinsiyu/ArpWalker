@@ -1,5 +1,7 @@
+import sys
 import time
 
+from PySide6.QtWidgets import QApplication
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -54,6 +56,7 @@ def main():
 
     # 运行演示
     scraper = EdgeScraper(headless=False)
+    app = QApplication(sys.argv)
     demonstrate_ciomp_login_process(scraper)
     # 显示确认弹窗
     user_confirmed = scraper.wait_for_user_interaction(

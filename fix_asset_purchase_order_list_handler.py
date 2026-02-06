@@ -1,5 +1,7 @@
+import sys
 import time
 
+from PySide6.QtWidgets import QApplication
 from selenium.webdriver.common.by import By
 
 from edge_scraper import EdgeScraper
@@ -53,6 +55,7 @@ def main():
 
     # 运行演示
     scraper = EdgeScraper(headless=False)
+    app = QApplication(sys.argv)
     demonstrate_ciomp_login_process(scraper)
     while scraper.wait_for_user_interaction(
         "当前页面是否为资产采购列表页？"

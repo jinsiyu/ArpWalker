@@ -15,6 +15,7 @@ from edge_scraper import EdgeScraper
 from ciomp_scraper import demonstrate_ciomp_login_process
 from form_handler import handle_form_page
 from modify_report_name import modify_report_name
+from press_download_button import press_download_button
 
 
 def handle_fix_asset_stock_page(scraper, timeout=5):
@@ -95,13 +96,7 @@ def handle_fix_asset_stock_page(scraper, timeout=5):
             time.sleep(1)
 
         # 点击下载按钮元素
-        download_button_list = scraper.find_elements(By.XPATH, '''//i[@class="ci-download m-r text-xlg text-primary sslab-mr-xs"]''')
-        print(f"找到 {len(download_button_list)} 个下载按钮:")
-        for i, download_button in enumerate(download_button_list):
-            scraper.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", download_button)
-            time.sleep(3)
-            download_button.click()
-            print(f"已点击第{i + 1}个下载按钮元素")
+        press_download_button(scraper)
 
         # 点击更多元素
         a_list = scraper.find_elements(By.XPATH, "//a[text()='更多']", timeout)

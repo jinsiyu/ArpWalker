@@ -4,9 +4,6 @@
 """
 
 from edge_scraper import EdgeScraper
-from selenium.webdriver.common.by import By
-import time
-import json
 
 
 def demonstrate_ciomp_login_process(scraper):

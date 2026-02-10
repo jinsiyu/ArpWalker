@@ -17,7 +17,7 @@ def press_download_button(scraper):
                 return scope.obj ? JSON.stringify(scope.obj, null, 2) : 'No obj found';
             """, download_button)
 
-        print(f"第{i + 1}个下载按钮的Angular对象数据:")
+        print(f"第{i + 1}个下载按钮的obj数据:")
         print(obj_data)
         print("-" * 50)
 

@@ -24,8 +24,13 @@ def press_download_button(scraper):
         # 获取并输出item数据
         item_data = scraper.driver.execute_script("""
                 var element = arguments[0];
-                var scope = angular.element(element).scope();
-                return scope.item ? JSON.stringify(scope.item, null, 2) : 'No item found';
+                var trElement = element.closest('tr');
+                if (trElement) {
+                    var scope = angular.element(trElement).scope();
+                    return scope.item ? JSON.stringify(scope.item, null, 2) : 'No item found';
+                } else {
+                    return 'No parent tr element found';
+                }
             """, download_button)
 
         print(f"第{i + 1}个下载按钮的item数据:")
